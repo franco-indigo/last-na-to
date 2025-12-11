@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- SEO & Metadata -->
+    <title>Franco B. Mosquin - IT Student Portfolio</title>
+    <meta name="description" content="Portfolio of Franco B. Mosquin, a BSIT Student, Web Developer, and UI/UX Designer from La Consolacion University Philippines.">
+    <meta name="keywords" content="Franco Mosquin, Portfolio, IT Student, Web Developer, UI/UX Designer, Philippines">
+    <meta name="author" content="Franco B. Mosquin">
+    
+    <!-- Supabase JS Library -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://franco-mosquin-portfolio.vercel.app/">
+    <meta property="og:title" content="Franco B. Mosquin - IT Student Portfolio">
+    <meta property="og:description" content="BSIT Student | Web Developer | UI/UX Designer. View my projects, skills, and certificates.">
+    <meta property="og:image" content="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Self-zcHYyIN3Kv16CWsSjWxRzMTLaf39oo.png">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:title" content="Franco B. Mosquin - IT Student Portfolio">
+    <meta property="twitter:description" content="BSIT Student | Web Developer | UI/UX Designer. View my projects, skills, and certificates.">
+    <meta property="twitter:image" content="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Self-zcHYyIN3Kv16CWsSjWxRzMTLaf39oo.png">
+
+    <link rel="stylesheet" href="styles.css">
+    <!-- EmailJS library - Corrected import for Browser SDK v4 -->
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+
+    <!-- Custom Style Overrides -->
+    <style>
+        /* Lift the weather widget to align better with text on desktop screens */
+        @media (min-width: 900px) {
+            .about-wrapper {
+                display: flex !important;
+                align-items: flex-start !important;
+            }
+            .weather-widget-container {
+                align-self: flex-start !important;
+                margin-top: -15px !important; /* Negative margin to visualy align with text top */
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">Franco B. Mosquin</div>
+            <div class="hamburger" id="hamburger">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+            <ul class="nav-menu" id="navMenu">
+                <li class="nav-item"><a href="#home" class="nav-link">Home</a></li>
+                <li class="nav-item"><a href="#about" class="nav-link">About</a></li>
+                <li class="nav-item"><a href="#skills" class="nav-link">Skills</a></li>
+                <li class="nav-item"><a href="#education" class="nav-link">Education</a></li>
+                <li class="nav-item"><a href="#projects" class="nav-link">Projects</a></li>
+                <li class="nav-item"><a href="#certificates" class="nav-link">Certificates</a></li>
+                <li class="nav-item"><a href="#contact" class="nav-link">Contact</a></li>
+            </ul>
+        </div>
+        <div class="timezone-widget">
+            <div class="timezone-label">Manila Time</div>
+            <div class="timezone-time" id="timezoneDisplay">--:--:--</div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section id="home" class="hero">
+        <div id="wavesContainer" class="waves-background"></div>
+        <div class="hero-content">
+            <div class="profile-section">
+                <div class="electric-border" style="--electric-border-color: #7df9ff; border-radius: 20px;">
+                    <svg class="eb-svg" aria-hidden focusable="false">
+                        <defs>
+                            <filter id="electric-filter" colorInterpolationFilters="sRGB" x="-20%" y="-20%" width="140%" height="140%">
+                                <feTurbulence type="turbulence" baseFrequency="0.02" numOctaves="10" result="noise1" seed="1" />
+                                <feOffset in="noise1" dx="0" dy="0" result="offsetNoise1">
+                                    <animate attributeName="dy" values="700; 0" dur="6s" repeatCount="indefinite" calcMode="linear" />
+                                </feOffset>
+                                <feTurbulence type="turbulence" baseFrequency="0.02" numOctaves="10" result="noise2" seed="1" />
+                                <feOffset in="noise2" dx="0" dy="0" result="offsetNoise2">
+                                    <animate attributeName="dy" values="0; -700" dur="6s" repeatCount="indefinite" calcMode="linear" />
+                                </feOffset>
+                                <feTurbulence type="turbulence" baseFrequency="0.02" numOctaves="10" result="noise1" seed="2" />
+                                <feOffset in="noise1" dx="0" dy="0" result="offsetNoise3">
+                                    <animate attributeName="dx" values="490; 0" dur="6s" repeatCount="indefinite" calcMode="linear" />
+                                </feOffset>
+                                <feTurbulence type="turbulence" baseFrequency="0.02" numOctaves="10" result="noise2" seed="2" />
+                                <feOffset in="noise2" dx="0" dy="0" result="offsetNoise4">
+                                    <animate attributeName="dx" values="0; -490" dur="6s" repeatCount="indefinite" calcMode="linear" />
+                                </feOffset>
+                                <feComposite in="offsetNoise1" in2="offsetNoise2" result="part1" />
+                                <feComposite in="offsetNoise3" in2="offsetNoise4" result="part2" />
+                                <feBlend in="part1" in2="part2" mode="color-dodge" result="combinedNoise" />
+                                <feDisplacementMap in="SourceGraphic" in2="combinedNoise" scale="30" xChannelSelector="R" yChannelSelector="B" />
+                            </filter>
+                        </defs>
+                    </svg>
+                    <div class="eb-layers">
+                        <div class="eb-stroke"></div>
+                        <div class="eb-glow-1"></div>
+                        <div class="eb-glow-2"></div>
+                        <div class="eb-background-glow"></div>
+                    </div>
+                    <div class="eb-content">
+                        <img src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Self-zcHYyIN3Kv16CWsSjWxRzMTLaf39oo.png" alt="Franco B. Mosquin" class="profile-image">
+                    </div>
+                </div>
+            </div>
+            <div class="hero-text">
+                <h1>Franco B. Mosquin</h1>
+                <p class="subtitle">BSIT Student | Web Developer | UI/UX Designer</p>
+                <p class="tagline">Responsible IT student at La Consolacion University Philippines. Quick learner with a passion for web development, UI/UX design, and creative problem-solving.</p>
+                <div class="cta-buttons">
+                    <a href="#projects" class="btn btn-primary">View My Work</a>
+                    <a href="#contact" class="btn btn-secondary">Get in Touch</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- About Section -->
+    <section id="about" class="about">
+        <div class="container">
+            <h2>About Me</h2>
+            <div class="about-wrapper">
+                <div class="about-left">
+                    <!-- Added ID for dynamic content -->
+                    <div class="about-content" id="about-content">
+                        <!-- Default Static Content (will be replaced if DB exists) -->
+                        <p>Hello! I'm Franco Mosquin, a 4th-year Information Technology student at La Consolacion University Philippines. I'm a responsible and well-organized individual who values efficiency and attention to detail. I learn quickly, adapt easily, and apply creativity through writing and drawing.</p>
+                        <p>My goal is to continuously grow, adapt, and contribute meaningfully in both creative and tech-driven environments. I'm passionate about solving real-world problems through innovative technology solutions and thoughtful design.</p>
+                    </div>
+                </div>
+                
+                <!-- Vertical Divider -->
+                <div class="about-divider"></div>
+
+                <!-- Weather Widget Container (Right Side) -->
+                <div class="weather-widget-container">
+                    <div class="weather-card" id="weatherCard">
+                        <!-- Dynamic Visual Background -->
+                        <div class="weather-visuals" id="weatherVisuals"></div>
+                        
+                        <div class="weather-content-wrapper">
+                            <h3>Live Weather (Manila)</h3>
+                            <!-- Weather Emoji Display -->
+                            <div id="weatherEmoji" style="font-size: 4rem; text-align: center; margin: 10px 0; text-shadow: 0 4px 6px rgba(0,0,0,0.2);"></div>
+                            
+                            <div class="weather-info">
+                                <div class="weather-temp" id="weatherTemp">--°C</div>
+                                <div class="weather-desc" id="weatherDesc">Loading...</div>
+                                <div class="weather-details">
+                                    <span id="humidityVal">--%</span>
+                                    <span id="windVal">-- km/h</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Skills Section -->
+    <section id="skills" class="skills">
+        <div class="container">
+            <h2>Skills & Expertise</h2>
+            <!-- Added ID for dynamic loading -->
+            <div class="skills-grid" id="skills-grid">
+                <!-- Loading State -->
+                <p style="color: white; grid-column: 1/-1; text-align: center;">Loading skills...</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Education Section -->
+    <section id="education" class="education">
+        <div class="container">
+            <h2>Education</h2>
+            <!-- Added ID for dynamic content -->
+            <div class="education-timeline" id="education-timeline">
+                <!-- Default Static Content -->
+                <div class="timeline-item">
+                    <div class="timeline-marker"></div>
+                    <div class="timeline-content">
+                        <h3>La Consolacion University Philippines</h3>
+                        <p class="timeline-period">S.Y. 2021–2025</p>
+                        <p class="timeline-desc">Bachelor of Science in Information Technology</p>
+                    </div>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-marker"></div>
+                    <div class="timeline-content">
+                        <h3>Sto. Niño Parochial School</h3>
+                        <p class="timeline-period">S.Y. 2018–2021</p>
+                        <p class="timeline-desc">Senior High School</p>
+                    </div>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-marker"></div>
+                    <div class="timeline-content">
+                        <h3>Quezon City Academy</h3>
+                        <p class="timeline-period">S.Y. 2016–2018</p>
+                        <p class="timeline-desc">Junior High School</p>
+                    </div>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-marker"></div>
+                    <div class="timeline-content">
+                        <h3>Mystical Rose School of Bulacan Inc.</h3>
+                        <p class="timeline-period">S.Y. 2013–2016</p>
+                        <p class="timeline-desc">Elementary</p>
+                    </div>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-marker"></div>
+                    <div class="timeline-content">
+                        <h3>Liceo de San Lorenzo</h3>
+                        <p class="timeline-period">S.Y. 2010–2013</p>
+                        <p class="timeline-desc">Elementary</p>
+                    </div>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-marker"></div>
+                    <div class="timeline-content">
+                        <h3>John Wesley Christian School</h3>
+                        <p class="timeline-period">S.Y. 2007–2010</p>
+                        <p class="timeline-desc">Primary/Elementary</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Projects Section -->
+    <section id="projects" class="projects">
+        <div class="container">
+            <h2>Featured Projects</h2>
+             <!-- Added ID for dynamic loading -->
+            <div class="projects-grid" id="projects-grid">
+                <!-- Loading State -->
+                <p style="color: white; grid-column: 1/-1; text-align: center;">Loading projects...</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Certificates Section -->
+    <section id="certificates" class="certificates">
+        <div class="container">
+            <h2>Certificates & Achievements</h2>
+             <!-- Added ID for dynamic loading -->
+            <div class="certificates-grid" id="certificates-grid">
+                 <!-- Loading State -->
+                 <p style="color: white; grid-column: 1/-1; text-align: center;">Loading certificates...</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact Section -->
+    <section id="contact" class="contact">
+        <div class="container">
+            <div class="contact-header">
+                <h2>Let's Connect</h2>
+                <p class="contact-subtitle">Have a project in mind? Let's talk <span class="heart">💬</span></p>
+            </div>
+            <div class="contact-wrapper">
+                <div class="contact-info">
+                    <div class="contact-item">
+                        <div class="contact-icon">📧</div>
+                        <div>
+                            <h3>Email</h3>
+                            <a href="mailto:francomosquin017@gmail.com">francomosquin017@gmail.com</a>
+                        </div>
+                    </div>
+                    <div class="contact-item">
+                        <div class="contact-icon">📱</div>
+                        <div>
+                            <h3>Phone</h3>
+                            <a href="tel:+639670749951">0967 074 9951</a>
+                        </div>
+                    </div>
+                    <div class="contact-item">
+                        <div class="contact-icon">👤</div>
+                        <div>
+                            <h3>Socials</h3>
+                            <a href="https://web.facebook.com/franco.bendano.mosquin" target="_blank">Facebook Profile</a>
+                            <a href="https://www.linkedin.com/in/franco-mosquin-ba282b37b?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=ios_app" target="_blank" style="display: block; margin-top: 8px;">LinkedIn Profile</a>
+                        </div>
+                    </div>
+                </div>
+                <form class="contact-form" id="contact-form">
+                    <div class="form-group">
+                        <input type="text" id="user_name" name="user_name" placeholder="Your name" required>
+                    </div>
+                    <div class="form-group">
+                        <textarea id="message" name="message" placeholder="Your message..." rows="5" required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-contact">Send Message</button>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <!-- Modal for Certificate Lightbox -->
+    <div id="certModal" class="modal">
+        <span class="modal-close">&times;</span>
+        <img class="modal-content" id="modalImage">
+        <div class="modal-caption" id="modalCaption"></div>
+    </div>
+
+    <!-- Added click spark canvas overlay for cursor animation -->
+    <canvas id="clickSparkCanvas" class="click-spark-canvas"></canvas>
+
+    <!-- script.js handles all logic -->
+    <script src="script.js"></script>
+
+    <!-- SUPABASE INTEGRATION -->
+    <script>
+        // --- SUPABASE CONFIGURATION ---
+        const SUPABASE_URL = 'https://ljuvbdbetoslrfhuyokd.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxqdXZiZGJldG9zbHJmaHV5b2tkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUzNzIxMzcsImV4cCI6MjA4MDk0ODEzN30.ny4LxpoSLLOApyH3gAkQYNA7F0EwnDQMXLVwBesF6Vg';
+        
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        async function loadSupabaseContent() {
+            // 1. Projects
+            const { data: projects, error: pError } = await supabase.from('projects').select('*').order('created_at', { ascending: false });
+            const pGrid = document.getElementById('projects-grid');
+            if (projects && projects.length > 0) {
+                pGrid.innerHTML = projects.map(p => `
+                    <div class="project-card">
+                        <img src="${p.image || p.image_url || 'https://placehold.co/600x400?text=No+Image'}" alt="${p.title}" 
+                             style="width: 100%; height: 220px; object-fit: contain; background-color: rgba(255,255,255,0.05); border-radius: 8px; margin-bottom: 12px;">
+                        <h3>${p.title}</h3>
+                        <p>${p.description}</p>
+                    </div>
+                `).join('');
+            } else {
+                pGrid.innerHTML = '<p style="color: #aaa; text-align: center; grid-column: 1/-1;">No projects found.</p>';
+            }
+
+            // 2. Skills
+            const { data: skills, error: sError } = await supabase.from('skills').select('*').order('created_at', { ascending: false });
+            const sGrid = document.getElementById('skills-grid');
+            if (skills && skills.length > 0) {
+                sGrid.innerHTML = skills.map(s => `
+                    <div class="skill-card">
+                        <div class="skill-icon">${s.icon || '⚡'}</div>
+                        <h3>${s.title}</h3>
+                    </div>
+                `).join('');
+            } else {
+                sGrid.innerHTML = '<p style="color: #aaa; text-align: center; grid-column: 1/-1;">No skills found.</p>';
+            }
+
+            // 3. Certificates
+            const { data: certs, error: cError } = await supabase.from('certificates').select('*').order('created_at', { ascending: false });
+            const cGrid = document.getElementById('certificates-grid');
+            if (certs && certs.length > 0) {
+                cGrid.innerHTML = certs.map(c => {
+                    // Fallback for missing or broken images, ensures layout stability
+                    const imgSrc = c.image || c.image_url || 'https://placehold.co/600x400?text=No+Image';
+                    const titleSafe = c.title ? c.title.replace(/"/g, '&quot;') : 'Certificate';
+                    return `
+                    <div class="cert-card" data-title="${titleSafe}">
+                        <img src="${imgSrc}" alt="${titleSafe}" loading="lazy" 
+                             style="width: 100%; height: 220px; object-fit: contain; background-color: rgba(255,255,255,0.05);"
+                             onerror="this.onerror=null; this.src='https://placehold.co/600x400?text=Image+Error';">
+                        <p>${c.title}</p>
+                    </div>
+                `}).join('');
+            } else {
+                cGrid.innerHTML = '<p style="color: #aaa; text-align: center; grid-column: 1/-1;">No certificates found.</p>';
+            }
+
+            // 4. Education
+            const { data: education, error: eError } = await supabase.from('education').select('*').order('created_at', { ascending: false });
+            const eTimeline = document.getElementById('education-timeline');
+            if (education && education.length > 0) {
+                eTimeline.innerHTML = education.map(e => `
+                    <div class="timeline-item">
+                        <div class="timeline-marker"></div>
+                        <div class="timeline-content">
+                            <h3>${e.school}</h3>
+                            <p class="timeline-period">${e.period}</p>
+                            <p class="timeline-desc">${e.degree}</p>
+                        </div>
+                    </div>
+                `).join('');
+            }
+            // else: keep static fallback if nothing is in DB
+
+            // 5. About Me
+            const { data: about, error: aError } = await supabase.from('about').select('*').order('created_at', { ascending: true });
+            const aContent = document.getElementById('about-content');
+            if (about && about.length > 0) {
+                aContent.innerHTML = about.map(a => `<p>${a.content}</p>`).join('');
+            }
+            // else: keep static fallback
+        }
+
+        // --- MODAL DELEGATION (Patch for dynamic content) ---
+        // This ensures the modal works even if script.js event listeners were attached before data loaded
+        document.getElementById('certificates-grid').addEventListener('click', function(e) {
+            const card = e.target.closest('.cert-card');
+            if (card) {
+                const modal = document.getElementById('certModal');
+                const modalImg = document.getElementById('modalImage');
+                const modalCaption = document.getElementById('modalCaption');
+                const img = card.querySelector('img');
+                const title = card.getAttribute('data-title');
+
+                if (modal && img) {
+                    modal.style.display = "block";
+                    // Use the current src of the image (which might be the error placeholder) or data-src if implemented
+                    modalImg.src = img.src; 
+                    modalCaption.innerHTML = title;
+                }
+            }
+        });
+
+        // Close modal logic (duplicating strict logic just in case)
+        const closeBtn = document.querySelector('.modal-close');
+        if (closeBtn) {
+            closeBtn.onclick = function() {
+                document.getElementById('certModal').style.display = "none";
+            }
+        }
+        
+        // Initialize
+        loadSupabaseContent();
+    </script>
+</body>
+</html>
