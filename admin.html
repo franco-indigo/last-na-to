@@ -149,6 +149,17 @@
                     <i data-lucide="layout-dashboard" width="20"></i>
                     <span class="font-semibold">Dashboard</span>
                 </button>
+                
+                <div class="pt-2 pb-1 px-3 text-xs font-bold text-gray-400 uppercase tracking-wider">Pages</div>
+                <button onclick="router.navigate('home')" class="nav-item flex items-center gap-3 w-full p-3 rounded-lg transition-all duration-300 text-text-secondary hover:bg-gray-100 hover:text-primary" id="nav-home">
+                    <i data-lucide="home" width="20"></i>
+                    <span class="font-semibold">Home / Hero</span>
+                </button>
+                <button onclick="router.navigate('about')" class="nav-item flex items-center gap-3 w-full p-3 rounded-lg transition-all duration-300 text-text-secondary hover:bg-gray-100 hover:text-primary" id="nav-about">
+                    <i data-lucide="user-circle" width="20"></i>
+                    <span class="font-semibold">About Me</span>
+                </button>
+
                 <div class="pt-2 pb-1 px-3 text-xs font-bold text-gray-400 uppercase tracking-wider">Content</div>
                 <button onclick="router.navigate('projects')" class="nav-item flex items-center gap-3 w-full p-3 rounded-lg transition-all duration-300 text-text-secondary hover:bg-gray-100 hover:text-primary" id="nav-projects">
                     <i data-lucide="briefcase" width="20"></i>
@@ -244,7 +255,7 @@
                 const pass = document.getElementById('login-pass').value;
                 const errorMsg = document.getElementById('login-error');
 
-                if (user === 'admin' && pass === 'admin') {
+                if (user === 'indigorous' && pass === 'TheCeylaChronicles017_') {
                     sessionStorage.setItem('franco_cms_auth', 'true');
                     auth.showApp();
                 } else {
@@ -286,8 +297,6 @@
                     toggleBtn.addEventListener('click', () => {
                         const isPassword = passInput.type === 'password';
                         passInput.type = isPassword ? 'text' : 'password';
-                        
-                        // Toggle icon
                         toggleBtn.innerHTML = `<i data-lucide="${isPassword ? 'eye-off' : 'eye'}" width="20"></i>`;
                         lucide.createIcons({ root: toggleBtn });
                     });
@@ -308,8 +317,13 @@
         const appState = {
             projects: [],
             skills: [],
-            certificates: []
+            certificates: [],
+            home: [],
+            about: []
         };
+
+        // Temp storage for gallery images in modal
+        let tempGallery = [];
 
         // --- DATABASE SERVICE (ASYNC) ---
         const db = {
@@ -341,13 +355,26 @@
                     // Specific error handling for missing columns
                     if (result.error.message.includes('Could not find the') && result.error.message.includes('column')) {
                         const missingCol = result.error.message.match(/'([^']+)'/)?.[1] || 'unknown';
+                        // Hint to user to add columns
                         const sqlCommand = `ALTER TABLE ${table} ADD COLUMN ${missingCol} text;`;
-                        
                         prompt(
                             `DATABASE ERROR: Missing Column '${missingCol}'\n\nTo fix this, go to Supabase > SQL Editor and run this command (Ctrl+C to copy):`,
                             sqlCommand
                         );
-                    } else {
+                    } 
+                    // Handling for missing table 'home' or 'about'
+                    else if (result.error.message.includes('relation') && result.error.message.includes('does not exist')) {
+                         const tableStructure = table === 'home' 
+                            ? `id uuid default uuid_generate_v4() primary key, title text, subtitle text, tagline text, created_at timestamp with time zone default timezone('utc'::text, now()) not null`
+                            : `id uuid default uuid_generate_v4() primary key, content text, created_at timestamp with time zone default timezone('utc'::text, now()) not null`;
+                         
+                         const sqlCommand = `create table ${table} ( ${tableStructure} );`;
+                         prompt(
+                            `DATABASE ERROR: Missing Table '${table}'\n\nTo fix this, go to Supabase > SQL Editor and run this command:`,
+                            sqlCommand
+                        );
+                    }
+                    else {
                         alert('Error saving: ' + result.error.message);
                     }
                     return false;
@@ -401,6 +428,32 @@
 
             closeModal: () => {
                 document.getElementById('modal-overlay').classList.add('hidden');
+                tempGallery = []; // Clear temp gallery
+            },
+
+            renderGalleryPreview: () => {
+                const container = document.getElementById('gallery-preview-container');
+                if (!container) return;
+                
+                if (tempGallery.length === 0) {
+                    container.innerHTML = '<p class="text-gray-400 text-xs text-center py-2">No gallery images</p>';
+                    return;
+                }
+
+                container.innerHTML = tempGallery.map((img, index) => `
+                    <div class="relative group w-20 h-20 bg-gray-100 rounded overflow-hidden border border-gray-200">
+                        <img src="${img}" class="w-full h-full object-cover">
+                        <button type="button" onclick="ui.removeGalleryImage(${index})" class="absolute top-0 right-0 bg-red-500 text-white p-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <i data-lucide="x" width="12"></i>
+                        </button>
+                    </div>
+                `).join('');
+                lucide.createIcons();
+            },
+
+            removeGalleryImage: (index) => {
+                tempGallery.splice(index, 1);
+                ui.renderGalleryPreview();
             },
 
             openModal: (type, itemId = null) => {
@@ -410,6 +463,7 @@
                 const idField = document.getElementById('field-id');
 
                 modal.dataset.type = type; 
+                tempGallery = []; // Reset
                 
                 let item = {};
                 if (itemId) {
@@ -424,30 +478,76 @@
                 let fieldsHTML = '';
                 const values = item;
 
-                if (type === 'projects') {
-                    // Using similar structure to Certificates for image upload
+                if (type === 'home') {
+                    fieldsHTML = `
+                        <div>
+                            <label class="block text-sm font-semibold text-text-secondary mb-1">Main Title (Name)</label>
+                            <input type="text" name="title" value="${values.title || ''}" class="w-full p-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-accent text-text-primary">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-text-secondary mb-1">Subtitle</label>
+                            <input type="text" name="subtitle" value="${values.subtitle || ''}" class="w-full p-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-accent text-text-primary">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-text-secondary mb-1">Tagline / Description</label>
+                            <textarea name="tagline" rows="3" class="w-full p-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-accent text-text-primary">${values.tagline || ''}</textarea>
+                        </div>
+                    `;
+                } else if (type === 'about') {
+                    fieldsHTML = `
+                         <div>
+                            <label class="block text-sm font-semibold text-text-secondary mb-1">Paragraph Content</label>
+                            <textarea name="content" rows="6" class="w-full p-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-accent text-text-primary" placeholder="Enter paragraph text...">${values.content || ''}</textarea>
+                        </div>
+                    `;
+                } else if (type === 'projects') {
                     const imgVal = values.image || values.image_url || '';
+                    // Populate tempGallery from item if exists
+                    if (values.gallery) {
+                        try {
+                            const parsed = JSON.parse(values.gallery);
+                            if (Array.isArray(parsed)) tempGallery = parsed;
+                        } catch (e) {
+                            // Fallback for simple comma sep or newlines if manually entered before
+                            if(typeof values.gallery === 'string') tempGallery = values.gallery.split('\n').filter(s => s.trim());
+                        }
+                    }
+
                     fieldsHTML = `
                         <div>
                             <label class="block text-sm font-semibold text-text-secondary mb-1">Project Title</label>
                             <input type="text" name="title" value="${values.title || ''}" required class="w-full p-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-accent text-text-primary">
                         </div>
                         <div>
-                            <label class="block text-sm font-semibold text-text-secondary mb-1">Project Image</label>
+                            <label class="block text-sm font-semibold text-text-secondary mb-1">Main Project Image</label>
                             <div class="flex items-center gap-2 mb-2">
                                 <label class="cursor-pointer bg-gray-100 hover:bg-gray-200 text-text-primary px-4 py-2 rounded-lg border border-gray-300 transition-colors">
-                                    <span class="flex items-center gap-2 text-sm"><i data-lucide="upload" width="16"></i> Choose Image</span>
+                                    <span class="flex items-center gap-2 text-sm"><i data-lucide="upload" width="16"></i> Choose Main Image</span>
                                     <input type="file" id="cert-file-input" accept="image/*" class="hidden">
                                 </label>
                                 <span id="file-name" class="text-xs text-text-secondary">No file selected</span>
                             </div>
-                            <p class="text-xs text-gray-400 mb-1">OR enter Image URL:</p>
-                            <input type="text" id="cert-image-url" name="image" value="${imgVal}" required class="w-full p-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-accent text-text-primary text-sm" placeholder="https://...">
+                            <input type="text" id="cert-image-url" name="image" value="${imgVal}" required class="w-full p-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-accent text-text-primary text-sm" placeholder="Main Image URL">
                         </div>
-                        <div id="image-preview" class="mt-2 h-48 bg-gray-100 border border-dashed border-gray-300 rounded flex items-center justify-center overflow-hidden">
+                        <div id="image-preview" class="mt-2 h-32 bg-gray-100 border border-dashed border-gray-300 rounded flex items-center justify-center overflow-hidden">
                             ${imgVal ? `<img src="${imgVal}" class="w-full h-full object-contain">` : '<span class="text-gray-400 text-xs">Image Preview</span>'}
                         </div>
-                        <div>
+                        
+                        <div class="mt-4 border-t pt-4 border-gray-100">
+                            <label class="block text-sm font-semibold text-text-secondary mb-2">Gallery Images</label>
+                            <div class="flex items-center gap-2 mb-3">
+                                <label class="cursor-pointer bg-accent/10 hover:bg-accent/20 text-accent font-semibold px-4 py-2 rounded-lg border border-accent/20 transition-colors">
+                                    <span class="flex items-center gap-2 text-sm"><i data-lucide="plus" width="16"></i> Add Images</span>
+                                    <input type="file" id="gallery-file-input" accept="image/*" multiple class="hidden">
+                                </label>
+                                <span class="text-xs text-gray-400">Select multiple files to add</span>
+                            </div>
+                            <div id="gallery-preview-container" class="flex flex-wrap gap-2 p-2 bg-gray-50 rounded-lg border border-gray-200 min-h-[60px]">
+                                <!-- Previews injected here -->
+                            </div>
+                        </div>
+
+                        <div class="mt-4">
                             <label class="block text-sm font-semibold text-text-secondary mb-1">Description</label>
                             <textarea name="description" required rows="4" class="w-full p-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-accent text-text-primary">${values.description || ''}</textarea>
                         </div>
@@ -464,7 +564,6 @@
                         </div>
                     `;
                 } else if (type === 'certificates') {
-                    // Normalize to 'image' for simplicity, assuming user will fix DB to match
                     const imgVal = values.image || values.image_url || '';
                     fieldsHTML = `
                         <div>
@@ -480,8 +579,6 @@
                                 </label>
                                 <span id="file-name" class="text-xs text-text-secondary">No file selected</span>
                             </div>
-                            <p class="text-xs text-gray-400 mb-1">OR enter Image URL:</p>
-                            <!-- Changed name to 'image' to standardize on the most common Supabase column name -->
                             <input type="text" id="cert-image-url" name="image" value="${imgVal}" required class="w-full p-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-accent text-text-primary text-sm" placeholder="https://...">
                         </div>
                         <div id="image-preview" class="mt-2 h-48 bg-gray-100 border border-dashed border-gray-300 rounded flex items-center justify-center overflow-hidden">
@@ -492,24 +589,23 @@
 
                 fieldsContainer.innerHTML = fieldsHTML;
                 
-                // Event handling for Certificates inputs (File or URL)
+                // Initialize Gallery Preview
+                if (type === 'projects') ui.renderGalleryPreview();
+
+                // Event handling for file input
                 if (type === 'certificates' || type === 'projects') {
                     lucide.createIcons();
                     setTimeout(() => {
-                        // Handle File Upload
+                        // Main Image Handler
                         const fileInput = document.getElementById('cert-file-input');
                         if (fileInput) {
                             fileInput.addEventListener('change', (e) => {
                                 const file = e.target.files[0];
                                 if (file) {
                                     document.getElementById('file-name').textContent = file.name;
-                                    
-                                    if (file.size > 500 * 1024) {
-                                        alert("File is too large! Please choose an image under 500KB to save database space, or use an external URL.");
-                                        e.target.value = "";
-                                        return;
+                                    if (file.size > 800 * 1024) {
+                                        alert("File is too large (>800KB)! It might not save to the DB.");
                                     }
-
                                     const reader = new FileReader();
                                     reader.onload = (ev) => {
                                         const base64 = ev.target.result;
@@ -520,18 +616,43 @@
                                 }
                             });
                         }
-
-                        // Handle URL Input Live Preview
+                        // Main URL Handler
                         const urlInput = document.getElementById('cert-image-url');
                         if(urlInput) {
                             urlInput.addEventListener('input', (e) => {
                                 const val = e.target.value;
                                 const preview = document.getElementById('image-preview');
-                                if(val && preview) {
-                                    preview.innerHTML = `<img src="${val}" class="w-full h-full object-contain">`;
-                                } else if (preview && !val) {
-                                    preview.innerHTML = '<span class="text-gray-400 text-xs">Image Preview</span>';
-                                }
+                                if(val && preview) preview.innerHTML = `<img src="${val}" class="w-full h-full object-contain">`;
+                            });
+                        }
+
+                        // Gallery File Handler (Projects Only)
+                        const galleryInput = document.getElementById('gallery-file-input');
+                        if (galleryInput) {
+                            galleryInput.addEventListener('change', (e) => {
+                                const files = Array.from(e.target.files);
+                                if (files.length === 0) return;
+
+                                let processedCount = 0;
+                                files.forEach(file => {
+                                    if (file.size > 800 * 1024) {
+                                        alert(`Skipping ${file.name}: Too large (>800KB).`);
+                                        processedCount++;
+                                        if (processedCount === files.length) ui.renderGalleryPreview();
+                                        return;
+                                    }
+                                    const reader = new FileReader();
+                                    reader.onload = (ev) => {
+                                        tempGallery.push(ev.target.result);
+                                        processedCount++;
+                                        if (processedCount === files.length) {
+                                            ui.renderGalleryPreview();
+                                        }
+                                    };
+                                    reader.readAsDataURL(file);
+                                });
+                                // Reset input so same files can be selected again if needed
+                                e.target.value = ''; 
                             });
                         }
                     }, 0);
@@ -550,6 +671,11 @@
 
                 const newItem = { id };
                 formData.forEach((value, key) => newItem[key] = value);
+
+                // For projects, append the gallery JSON
+                if (type === 'projects') {
+                    newItem.gallery = JSON.stringify(tempGallery);
+                }
 
                 const success = await db.upsert(type, newItem);
                 
@@ -596,7 +722,7 @@
                     appState.projects = await db.fetchAll('projects');
                     appState.skills = await db.fetchAll('skills');
                     appState.certificates = await db.fetchAll('certificates');
-                } else if (appState.hasOwnProperty(viewName)) {
+                } else if (['projects', 'skills', 'certificates', 'home', 'about'].includes(viewName)) {
                      appState[viewName] = await db.fetchAll(viewName);
                 }
 
@@ -606,7 +732,8 @@
                 container.className = 'fade-in';
 
                 if (viewName === 'dashboard') {
-                    const projects = appState.projects || [];
+                    // (Dashboard code remains same, omitted for brevity but logic flows here)
+                     const projects = appState.projects || [];
                     const skills = appState.skills || [];
                     const certs = appState.certificates || [];
                     
@@ -618,102 +745,53 @@
                             <h2 class="text-4xl font-bold text-white mb-2">Welcome back, Franco!</h2>
                             <p class="text-accent text-lg">Here's what's happening in your portfolio.</p>
                         </header>
-
-                        <!-- Stats Cards -->
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                             ${makeStatCard('Projects', projects.length, 'briefcase', '#42a5f5')}
                             ${makeStatCard('Skills', skills.length, 'zap', '#1a237e')}
                             ${makeStatCard('Certificates', certs.length, 'award', '#7df9ff')}
                         </div>
-
-                        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                            <!-- Analytics Chart -->
-                            <div class="lg:col-span-2 bg-white rounded-2xl p-6 shadow-xl text-text-primary">
-                                <h3 class="text-xl font-bold text-primary mb-6">Content Overview</h3>
-                                <div class="h-64 w-full flex items-end justify-around pb-4 border-b border-gray-200">
-                                    <div class="flex flex-col items-center w-1/4 h-full justify-end group">
-                                        <div class="w-full bg-accent/20 rounded-t-lg relative h-full flex items-end overflow-hidden">
-                                            <div style="height: ${getH(projects.length)}" class="w-full bg-accent bar-fill group-hover:bg-accent-dark transition-colors"></div>
-                                        </div>
-                                        <span class="mt-2 font-bold text-gray-500">Projects</span>
-                                        <span class="text-sm text-primary font-bold">${projects.length}</span>
-                                    </div>
-                                    <div class="flex flex-col items-center w-1/4 h-full justify-end group">
-                                        <div class="w-full bg-primary/20 rounded-t-lg relative h-full flex items-end overflow-hidden">
-                                            <div style="height: ${getH(skills.length)}" class="w-full bg-primary bar-fill"></div>
-                                        </div>
-                                        <span class="mt-2 font-bold text-gray-500">Skills</span>
-                                        <span class="text-sm text-primary font-bold">${skills.length}</span>
-                                    </div>
-                                    <div class="flex flex-col items-center w-1/4 h-full justify-end group">
-                                        <div class="w-full bg-blue-300/20 rounded-t-lg relative h-full flex items-end overflow-hidden">
-                                            <div style="height: ${getH(certs.length)}" class="w-full bg-blue-400 bar-fill"></div>
-                                        </div>
-                                        <span class="mt-2 font-bold text-gray-500">Certs</span>
-                                        <span class="text-sm text-primary font-bold">${certs.length}</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- System Status -->
-                            <div class="bg-gradient-to-br from-primary to-primary-light rounded-2xl p-6 shadow-xl text-white">
-                                <h3 class="text-xl font-bold mb-6">System Status</h3>
-                                <div class="space-y-4">
-                                    <div class="flex items-center justify-between p-3 bg-white/10 rounded-lg">
-                                        <span class="flex items-center gap-2"><div class="w-2 h-2 rounded-full bg-green-400"></div> Database</span>
-                                        <span class="text-sm font-mono text-green-300">Connected</span>
-                                    </div>
-                                    <div class="mt-8 pt-6 border-t border-white/20">
-                                        <p class="text-sm text-center text-blue-200">Portfolio v2.1</p>
-                                    </div>
-                                </div>
-                            </div>
+                        <div class="lg:col-span-2 bg-white rounded-2xl p-6 shadow-xl text-text-primary">
+                             <h3 class="text-xl font-bold text-primary mb-6">Quick Actions</h3>
+                             <div class="flex gap-4">
+                                <button onclick="router.navigate('home')" class="px-4 py-2 bg-blue-100 text-blue-800 rounded-lg hover:bg-blue-200">Edit Hero Section</button>
+                                <button onclick="router.navigate('about')" class="px-4 py-2 bg-blue-100 text-blue-800 rounded-lg hover:bg-blue-200">Edit About Me</button>
+                             </div>
                         </div>
                     `;
-
-                } else if (['projects', 'skills', 'certificates'].includes(viewName)) {
+                } else {
                     const items = appState[viewName] || []; 
                     let title = viewName.charAt(0).toUpperCase() + viewName.slice(1);
+                    if (viewName === 'home') title = "Hero / Home Section";
                     
                     let gridClass = "grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 pb-10";
+                    if (viewName === 'about' || viewName === 'home') gridClass = "space-y-4 pb-10 max-w-3xl";
 
                     const itemsHTML = items.length > 0 
                         ? items.map(item => makeCard(viewName, item)).join('') 
-                        : `
-                        <div class="col-span-full flex flex-col items-center justify-center py-16 bg-white/5 rounded-xl border border-white/10 text-center">
-                            <div class="bg-white/10 p-4 rounded-full mb-4">
-                                <i data-lucide="folder-open" class="text-blue-300" width="32"></i>
-                            </div>
-                            <h3 class="text-xl font-bold text-white mb-2">No items found</h3>
-                            <p class="text-blue-200 mb-6 max-w-md">There are no items in this collection yet.</p>
-                            <div class="flex gap-4">
-                                <button onclick="ui.openModal('${viewName}')" class="px-5 py-2 bg-accent text-white rounded-lg hover:bg-white hover:text-primary transition-colors font-semibold">
-                                    Add Manually
-                                </button>
-                                ${DEFAULTS[viewName] ? `
-                                <button onclick="db.seed('${viewName}')" class="px-5 py-2 border border-blue-400 text-blue-300 rounded-lg hover:bg-blue-400/10 transition-colors font-semibold">
-                                    Load Default Data
-                                </button>` : ''}
-                            </div>
-                        </div>
-                        `;
+                        : `<div class="p-8 bg-white/10 rounded-xl text-center text-blue-200 border border-white/10">No content found. <button onclick="ui.openModal('${viewName}')" class="underline text-white">Create one?</button></div>`;
+
+                    // Only show Add New button for content that isn't single-record (home/about)
+                    let addNewButton = '';
+                    if (!['home', 'about'].includes(viewName)) {
+                        addNewButton = `
+                        <button onclick="ui.openModal('${viewName}')" class="bg-accent hover:bg-white hover:text-primary text-white font-bold py-3 px-6 rounded-lg shadow-lg transform hover:-translate-y-1 transition-all flex items-center gap-2">
+                            <i data-lucide="plus" width="20"></i> Add New
+                        </button>`;
+                    }
 
                     container.innerHTML = `
                         <div class="flex justify-between items-center mb-6">
                             <div>
-                                <h2 class="text-3xl font-bold text-white">${title} Management</h2>
+                                <h2 class="text-3xl font-bold text-white">${title}</h2>
                                 <p class="text-blue-200">Manage your ${title.toLowerCase()} content here.</p>
                             </div>
-                            <button onclick="ui.openModal('${viewName}')" class="bg-accent hover:bg-white hover:text-primary text-white font-bold py-3 px-6 rounded-lg shadow-lg transform hover:-translate-y-1 transition-all flex items-center gap-2">
-                                <i data-lucide="plus" width="20"></i> Add New
-                            </button>
+                            ${addNewButton}
                         </div>
                         <div class="${gridClass}">
                             ${itemsHTML}
                         </div>
                     `;
                 }
-
                 lucide.createIcons();
             }
         };
@@ -721,10 +799,8 @@
         // --- HELPER FUNCTIONS ---
         function makeStatCard(label, value, icon, color) {
             return `
-            <div class="bg-white/10 backdrop-blur-lg border border-white/20 p-6 rounded-2xl text-white transform hover:-translate-y-1 transition-transform duration-300">
-                <div class="flex justify-between items-start mb-4">
-                    <i data-lucide="${icon}" width="32"></i>
-                </div>
+            <div class="bg-white/10 backdrop-blur-lg border border-white/20 p-6 rounded-2xl text-white">
+                <div class="flex justify-between items-start mb-4"><i data-lucide="${icon}" width="32"></i></div>
                 <h3 class="text-3xl font-bold mb-1">${value}</h3>
                 <p class="text-gray-300 font-medium">${label}</p>
             </div>`;
@@ -737,31 +813,47 @@
             if (type === 'projects') {
                 cardClass = 'bg-surface p-6 rounded-xl shadow-lg border-l-4 border-accent hover:-translate-y-2 transition-transform duration-300 h-full';
                 const imgSrc = item.image || item.image_url || 'https://placehold.co/600x400?text=No+Image';
+                
+                let hasGallery = false;
+                if(item.gallery && item.gallery !== '[]') hasGallery = true;
+
                 content = `
-                    <div class="h-48 overflow-hidden bg-gray-800 flex items-center justify-center mb-4 rounded-lg">
-                        <img src="${imgSrc}" alt="${item.title}" class="w-full h-full object-contain" />
+                    <div class="h-48 overflow-hidden bg-gray-800 flex items-center justify-center mb-4 rounded-lg relative group">
+                        <img src="${imgSrc}" class="w-full h-full object-contain" />
+                        ${hasGallery ? '<div class="absolute bottom-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded flex items-center gap-1"><i data-lucide="layers" width="12"></i> Gallery</div>' : ''}
                     </div>
                     <h3 class="text-xl font-bold text-primary mb-1">${item.title}</h3>
                     <p class="text-text-secondary line-clamp-3">${item.description}</p>
                 `;
+            } else if (type === 'home') {
+                cardClass = 'bg-surface p-6 rounded-xl shadow-lg border-l-4 border-yellow-400';
+                content = `
+                    <div class="mb-2 text-xs text-yellow-600 font-bold uppercase tracking-wider">Current Display</div>
+                    <h3 class="text-2xl font-bold text-primary">${item.title}</h3>
+                    <p class="text-accent font-medium mb-2">${item.subtitle}</p>
+                    <p class="text-text-secondary italic">"${item.tagline}"</p>
+                `;
+            } else if (type === 'about') {
+                cardClass = 'bg-surface p-6 rounded-xl shadow-lg border-l-4 border-green-400';
+                content = `
+                    <p class="text-text-primary whitespace-pre-wrap">${item.content}</p>
+                `;
             } else if (type === 'skills') {
-                cardClass = 'bg-surface p-6 rounded-xl shadow-md flex flex-col items-center text-center hover:shadow-xl transition-shadow duration-300 h-full';
-                content = `
-                    <div class="text-5xl mb-4">${item.icon || '⚡'}</div>
-                    <h3 class="text-xl font-bold text-primary mb-1">${item.title}</h3>
-                `;
+                cardClass = 'bg-surface p-6 rounded-xl shadow-md flex flex-col items-center text-center';
+                content = `<div class="text-5xl mb-4">${item.icon || '⚡'}</div><h3 class="text-xl font-bold text-primary">${item.title}</h3>`;
             } else if (type === 'certificates') {
-                cardClass = 'bg-primary rounded-xl overflow-hidden shadow-lg border border-white/10 group cursor-pointer hover:border-accent transition-all duration-300 h-full';
-                // Prioritize image_url, fall back to image
+                cardClass = 'bg-primary rounded-xl overflow-hidden shadow-lg border border-white/10 group cursor-pointer';
                 const imgSrc = item.image || item.image_url || 'https://placehold.co/600x400?text=No+Image';
-                content = `
-                    <div class="h-48 overflow-hidden bg-gray-800 flex items-center justify-center">
-                        <img src="${imgSrc}" alt="${item.title}" class="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500" />
-                    </div>
-                    <div class="p-4 text-center">
-                        <p class="font-bold text-white text-sm line-clamp-2">${item.title}</p>
-                    </div>
-                `;
+                content = `<div class="h-48 overflow-hidden bg-gray-800 flex items-center justify-center"><img src="${imgSrc}" class="w-full h-full object-contain" /></div><div class="p-4 text-center"><p class="font-bold text-white text-sm line-clamp-2">${item.title}</p></div>`;
+            }
+
+            // Only show Delete button if NOT 'home' or 'about'
+            let deleteBtn = '';
+            if (type !== 'home' && type !== 'about') {
+                deleteBtn = `
+                <button onclick="ui.deleteItem('${type}', '${item.id}')" class="p-2 bg-red-500 text-white rounded-full shadow-lg hover:bg-red-600 transition-colors">
+                    <i data-lucide="trash-2" width="16"></i>
+                </button>`;
             }
 
             return `
@@ -773,9 +865,7 @@
                     <button onclick="ui.openModal('${type}', '${item.id}')" class="p-2 bg-white text-primary rounded-full shadow-lg hover:bg-accent hover:text-white transition-colors">
                         <i data-lucide="edit-2" width="16"></i>
                     </button>
-                    <button onclick="ui.deleteItem('${type}', '${item.id}')" class="p-2 bg-red-500 text-white rounded-full shadow-lg hover:bg-red-600 transition-colors">
-                        <i data-lucide="trash-2" width="16"></i>
-                    </button>
+                    ${deleteBtn}
                 </div>
             </div>`;
         }

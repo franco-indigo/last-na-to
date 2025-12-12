@@ -1,3 +1,4 @@
+
 * {
   margin: 0;
   padding: 0;
@@ -923,6 +924,48 @@ body {
   animation: fadeIn 0.3s ease;
 }
 
+.modal-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(0,0,0,0.5);
+  color: white;
+  padding: 15px;
+  cursor: pointer;
+  border-radius: 50%;
+  border: none;
+  font-size: 24px;
+  transition: 0.3s;
+  z-index: 2001;
+  width: 50px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.modal-nav:hover { background: rgba(255,255,255,0.2); }
+.modal-prev { left: 20px; }
+.modal-next { right: 20px; }
+
+.modal-dots {
+  position: absolute;
+  bottom: 20px; /* Adjusted to not overlap caption too much */
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 10px;
+  z-index: 2001;
+}
+.modal-dot {
+  width: 10px;
+  height: 10px;
+  background: rgba(255,255,255,0.4);
+  border-radius: 50%;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+.modal-dot.active { background: white; transform: scale(1.2); }
+
 /* Added click spark canvas styling */
 .click-spark-canvas {
   position: fixed;
@@ -938,12 +981,13 @@ body {
   margin: auto;
   display: block;
   max-width: 90%;
-  max-height: 90%;
+  max-height: 80%; /* Reduced to make room for caption and dots */
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
   border-radius: 12px;
+  box-shadow: 0 5px 30px rgba(0,0,0,0.5);
 }
 
 .modal-close {
@@ -954,6 +998,7 @@ body {
   font-size: 40px;
   cursor: pointer;
   transition: color 0.3s ease;
+  z-index: 2002;
 }
 
 .modal-close:hover {
@@ -963,12 +1008,14 @@ body {
 .modal-caption {
   color: white;
   position: absolute;
-  bottom: 20px;
+  bottom: 50px;
   left: 50%;
   transform: translateX(-50%);
   text-align: center;
   font-size: 18px;
   font-weight: 500;
+  width: 80%;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.8);
 }
 
 /* Animations */

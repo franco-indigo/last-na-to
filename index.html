@@ -15,7 +15,7 @@
 
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
-    <meta property="og:url" content="https://franco-mosquin-portfolio.vercel.app/">
+    <meta property="og:url" content="">
     <meta property="og:title" content="Franco B. Mosquin - IT Student Portfolio">
     <meta property="og:description" content="BSIT Student | Web Developer | UI/UX Designer. View my projects, skills, and certificates.">
     <meta property="og:image" content="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Self-zcHYyIN3Kv16CWsSjWxRzMTLaf39oo.png">
@@ -115,9 +115,9 @@
                 </div>
             </div>
             <div class="hero-text">
-                <h1>Franco B. Mosquin</h1>
-                <p class="subtitle">BSIT Student | Web Developer | UI/UX Designer</p>
-                <p class="tagline">Responsible IT student at La Consolacion University Philippines. Quick learner with a passion for web development, UI/UX design, and creative problem-solving.</p>
+                <h1 id="hero-title">Franco B. Mosquin</h1>
+                <p class="subtitle" id="hero-subtitle">BSIT Student | Web Developer | UI/UX Designer</p>
+                <p class="tagline" id="hero-tagline">Responsible IT student at La Consolacion University Philippines. Quick learner with a passion for web development, UI/UX design, and creative problem-solving.</p>
                 <div class="cta-buttons">
                     <a href="#projects" class="btn btn-primary">View My Work</a>
                     <a href="#contact" class="btn btn-secondary">Get in Touch</a>
@@ -309,11 +309,14 @@
         </div>
     </section>
 
-    <!-- Modal for Certificate Lightbox -->
+    <!-- Modal for Certificate Lightbox & Project Gallery -->
     <div id="certModal" class="modal">
         <span class="modal-close">&times;</span>
+        <button class="modal-nav modal-prev" id="modalPrev" style="display:none;">&#10094;</button>
+        <button class="modal-nav modal-next" id="modalNext" style="display:none;">&#10095;</button>
         <img class="modal-content" id="modalImage">
         <div class="modal-caption" id="modalCaption"></div>
+        <div class="modal-dots" id="modalDots"></div>
     </div>
 
     <!-- Added click spark canvas overlay for cursor animation -->
@@ -331,24 +334,55 @@
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         async function loadSupabaseContent() {
+            // 0. Hero Section (Home)
+            const { data: homeData } = await supabase.from('home').select('*').limit(1).single();
+            if (homeData) {
+                if (homeData.title) document.getElementById('hero-title').textContent = homeData.title;
+                if (homeData.subtitle) document.getElementById('hero-subtitle').textContent = homeData.subtitle;
+                if (homeData.tagline) document.getElementById('hero-tagline').textContent = homeData.tagline;
+            }
+
             // 1. Projects
-            const { data: projects, error: pError } = await supabase.from('projects').select('*').order('created_at', { ascending: false });
+            const { data: projects } = await supabase.from('projects').select('*').order('created_at', { ascending: false });
             const pGrid = document.getElementById('projects-grid');
             if (projects && projects.length > 0) {
-                pGrid.innerHTML = projects.map(p => `
-                    <div class="project-card">
-                        <img src="${p.image || p.image_url || 'https://placehold.co/600x400?text=No+Image'}" alt="${p.title}" 
+                pGrid.innerHTML = projects.map(p => {
+                    let gallery = [];
+                    // Parse gallery JSON or fallback
+                    if (p.gallery) {
+                        try {
+                            const parsed = JSON.parse(p.gallery);
+                            if(Array.isArray(parsed)) gallery = parsed;
+                        } catch(e) {
+                            // Legacy string check
+                            if(typeof p.gallery === 'string' && p.gallery.startsWith('[')) {
+                                // Already handled by JSON.parse
+                            } else {
+                                gallery = [p.gallery];
+                            }
+                        }
+                    }
+                    
+                    // Add main image to gallery if not present
+                    const mainImg = p.image || p.image_url;
+                    if(mainImg && !gallery.includes(mainImg)) gallery.unshift(mainImg);
+                    
+                    const galleryJSON = JSON.stringify(gallery).replace(/"/g, '&quot;');
+
+                    return `
+                    <div class="project-card cursor-pointer" data-title="${p.title}" data-gallery="${galleryJSON}">
+                        <img src="${mainImg || 'https://placehold.co/600x400?text=No+Image'}" alt="${p.title}" 
                              style="width: 100%; height: 220px; object-fit: contain; background-color: rgba(255,255,255,0.05); border-radius: 8px; margin-bottom: 12px;">
                         <h3>${p.title}</h3>
                         <p>${p.description}</p>
                     </div>
-                `).join('');
+                `}).join('');
             } else {
                 pGrid.innerHTML = '<p style="color: #aaa; text-align: center; grid-column: 1/-1;">No projects found.</p>';
             }
 
             // 2. Skills
-            const { data: skills, error: sError } = await supabase.from('skills').select('*').order('created_at', { ascending: false });
+            const { data: skills } = await supabase.from('skills').select('*').order('created_at', { ascending: false });
             const sGrid = document.getElementById('skills-grid');
             if (skills && skills.length > 0) {
                 sGrid.innerHTML = skills.map(s => `
@@ -362,11 +396,10 @@
             }
 
             // 3. Certificates
-            const { data: certs, error: cError } = await supabase.from('certificates').select('*').order('created_at', { ascending: false });
+            const { data: certs } = await supabase.from('certificates').select('*').order('created_at', { ascending: false });
             const cGrid = document.getElementById('certificates-grid');
             if (certs && certs.length > 0) {
                 cGrid.innerHTML = certs.map(c => {
-                    // Fallback for missing or broken images, ensures layout stability
                     const imgSrc = c.image || c.image_url || 'https://placehold.co/600x400?text=No+Image';
                     const titleSafe = c.title ? c.title.replace(/"/g, '&quot;') : 'Certificate';
                     return `
@@ -381,8 +414,8 @@
                 cGrid.innerHTML = '<p style="color: #aaa; text-align: center; grid-column: 1/-1;">No certificates found.</p>';
             }
 
-            // 4. Education
-            const { data: education, error: eError } = await supabase.from('education').select('*').order('created_at', { ascending: false });
+            // 4. Education (Supabase + Fallback)
+            const { data: education } = await supabase.from('education').select('*').order('created_at', { ascending: false });
             const eTimeline = document.getElementById('education-timeline');
             if (education && education.length > 0) {
                 eTimeline.innerHTML = education.map(e => `
@@ -396,38 +429,95 @@
                     </div>
                 `).join('');
             }
-            // else: keep static fallback if nothing is in DB
 
             // 5. About Me
-            const { data: about, error: aError } = await supabase.from('about').select('*').order('created_at', { ascending: true });
+            const { data: about } = await supabase.from('about').select('*').order('created_at', { ascending: true });
             const aContent = document.getElementById('about-content');
             if (about && about.length > 0) {
                 aContent.innerHTML = about.map(a => `<p>${a.content}</p>`).join('');
             }
-            // else: keep static fallback
         }
 
-        // --- MODAL DELEGATION (Patch for dynamic content) ---
-        // This ensures the modal works even if script.js event listeners were attached before data loaded
-        document.getElementById('certificates-grid').addEventListener('click', function(e) {
-            const card = e.target.closest('.cert-card');
+        // --- GALLERY LIGHTBOX LOGIC ---
+        let currentGallery = [];
+        let currentIndex = 0;
+
+        function updateModalImage() {
+            const img = document.getElementById('modalImage');
+            const dotsContainer = document.getElementById('modalDots');
+            
+            img.src = currentGallery[currentIndex];
+            
+            // Update dots
+            if (currentGallery.length > 1) {
+                dotsContainer.innerHTML = currentGallery.map((_, i) => 
+                    `<div class="modal-dot ${i === currentIndex ? 'active' : ''}" onclick="goToImage(${i})"></div>`
+                ).join('');
+            } else {
+                dotsContainer.innerHTML = '';
+            }
+
+            // Show/Hide arrows
+            document.getElementById('modalPrev').style.display = currentGallery.length > 1 ? 'block' : 'none';
+            document.getElementById('modalNext').style.display = currentGallery.length > 1 ? 'block' : 'none';
+        }
+
+        window.goToImage = function(index) {
+            currentIndex = index;
+            updateModalImage();
+        }
+
+        document.getElementById('modalPrev').addEventListener('click', (e) => {
+            e.stopPropagation();
+            currentIndex = (currentIndex > 0) ? currentIndex - 1 : currentGallery.length - 1;
+            updateModalImage();
+        });
+
+        document.getElementById('modalNext').addEventListener('click', (e) => {
+            e.stopPropagation();
+            currentIndex = (currentIndex < currentGallery.length - 1) ? currentIndex + 1 : 0;
+            updateModalImage();
+        });
+
+        // Event Delegation for both Certs and Projects
+        document.addEventListener('click', function(e) {
+            const card = e.target.closest('.cert-card, .project-card');
             if (card) {
                 const modal = document.getElementById('certModal');
-                const modalImg = document.getElementById('modalImage');
-                const modalCaption = document.getElementById('modalCaption');
-                const img = card.querySelector('img');
+                const captionEl = document.getElementById('modalCaption');
                 const title = card.getAttribute('data-title');
+                
+                // Get gallery data
+                const rawGallery = card.getAttribute('data-gallery');
+                
+                if (rawGallery) {
+                    try {
+                        currentGallery = JSON.parse(rawGallery);
+                    } catch(e) { currentGallery = []; }
+                } else {
+                    // Fallback for certs or simple projects
+                    const img = card.querySelector('img');
+                    currentGallery = img ? [img.src] : [];
+                }
 
-                if (modal && img) {
+                if (currentGallery.length > 0) {
+                    currentIndex = 0;
+                    
+                    // Logic to hide/show name under image
+                    if (card.classList.contains('project-card')) {
+                        captionEl.style.display = 'none'; // Hide for projects
+                    } else {
+                        captionEl.style.display = 'block'; // Show for certificates
+                        captionEl.textContent = title;
+                    }
+
+                    updateModalImage();
                     modal.style.display = "block";
-                    // Use the current src of the image (which might be the error placeholder) or data-src if implemented
-                    modalImg.src = img.src; 
-                    modalCaption.innerHTML = title;
                 }
             }
         });
 
-        // Close modal logic (duplicating strict logic just in case)
+        // Close modal logic
         const closeBtn = document.querySelector('.modal-close');
         if (closeBtn) {
             closeBtn.onclick = function() {
